@@ -1,0 +1,14 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "api pour gérer les locations d'engins agricoles",
+  "main": "server.js",
+  "scripts": {
+    "test": "npm start"
+  },
+  "keywords": [
+    "location"
+  ],
+  "author": "Sielo_Pro",
+  "license": "ISC"
+}
