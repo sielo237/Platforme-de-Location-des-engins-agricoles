@@ -5,22 +5,18 @@ const jwt=require('jsonwebtoken');
 const moment=require('moment');
 require('dotenv').config();
 
-//modèle du client qui seront enregistré  en Bd
-const userSchema=new mongoose.Schema({
+//modèle du loueur qui seront enregistré  en Bd
+const loueurSchema=new mongoose.Schema({
     nom:{
 		type:String,
 		required:true,
-        /*validate(v){
-            if(!validator.isAlpha(v)) throw new Error("le nom doit etre des caractères alphanumérique");
-        }*/
+        
 	},
 
     prenom:{
 		type:String,
 		required:true,
-        // validate(v){
-        //     if(!validator.isAlpha(v)) throw new Error("le nom doit etre des caractères alphanumérique");
-        // }
+        
 	},
 
     email:{
@@ -31,7 +27,7 @@ const userSchema=new mongoose.Schema({
 		required:true,
         validate(v){
             if(!validator.isEmail(v)) throw new Error ("Email non valide");
-            //throw new Error("Email non valide"); //renvoie une erreur si la données recu n'est pas une adresse email
+          
         }
 	},
 
@@ -40,7 +36,7 @@ const userSchema=new mongoose.Schema({
 		required:true,
         validate(v){
             if(!validator.isNumeric(v)) throw new Error ("veuillez entrez une date correcte");
-            //throw new Error("Email non valide"); //renvoie une erreur si la données recu n'est pas une adresse email
+           
         }
         
     },
@@ -78,7 +74,7 @@ const userSchema=new mongoose.Schema({
 
     TypedeCompte:{
         type:String,
-        default:"Agriculteur"
+        default:"Loueur"
         
         
     },
@@ -102,9 +98,9 @@ const userSchema=new mongoose.Schema({
 });
 
 
-// fonction pour générer un token d'authentification et sauvegarder le client
+// fonction pour générer un token d'authentification et sauvegarder le loueur
 
-userSchema.methods.generateAuthToken= async function (){
+loueurSchema.methods.generateAuthToken= async function (){
     const authToken= jwt.sign({_id:this._id.toString()}, process.env.CLE);
     //envoi du tokens de l'utilisateur dans le tableau de token
     this.authTokens.push({authToken}) ;
@@ -115,25 +111,25 @@ userSchema.methods.generateAuthToken= async function (){
 
 
 //creation de la fonction pour verifier les infos pour se logger
-userSchema.statics.findUser=async(email,password)=>{
-    const user= await User.findOne({email});
-    if(!user) throw new Error('email ou mot de passe incorrect');
-    const isPasswordValid= await bcrypt.compare(password, user.password);
+loueurSchema.statics.findLoueur=async(email,password)=>{
+    const loueur= await Loueur.findOne({email});
+    if(!loueur) throw new Error('email ou mot de passe incorrect')
+    const isPasswordValid= await bcrypt.compare(password, loueur.password);
     if(!isPasswordValid) throw new Error('email ou mot de passe incorrect');
-    return user;
+    return loueur;
 }
 
 
 
 // hasher le mot de pass avant d'envoyer en bd
-userSchema.pre('save', async function(){
+loueurSchema.pre('save', async function(){
     if( this.isModified('password')) this.password= await bcrypt.hash(this.password,8);
 
 });
 
 
 
-const User= new mongoose.model('User',userSchema)
+const Loueur= new mongoose.model('Loueur',loueurSchema)
     
 
-module.exports=User;
+module.exports=Loueur;

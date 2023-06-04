@@ -1,5 +1,5 @@
 {
-  "name": "location engin",
+  "name": "location_engin",
   "version": "1.0.0",
   "description": "location des engins agricoles",
   "main": "index.js",

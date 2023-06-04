@@ -7,7 +7,7 @@ const router= new express.Router();
 
 
 //endpoint pour créer un compte
-router.post('/singup', async(req,res)=>{
+router.post('/user/singup', async(req,res)=>{
     const user= new User(req.body);
 
     try {
@@ -50,7 +50,7 @@ router.get('/users/me',authentification,async(req, res)=>{
 
 
 //endpoint pour rechercher un client
-router.get('/singin/:id', authentification, async(req, res)=>{
+router.get('/user/singin/:id', authentification, async(req, res)=>{
 
     const userI = req.params.id; 
     try {
@@ -65,7 +65,7 @@ router.get('/singin/:id', authentification, async(req, res)=>{
 
 
 // route pour se connecter
-router.post('/login', async(req, res)=>{
+router.post('/user/login', async(req, res)=>{
     try {
         const user=await  User.findUser(req.body.email, req.body.password);
         const authToken= await user.generateAuthToken();
@@ -78,7 +78,7 @@ router.post('/login', async(req, res)=>{
 });
 
 // route pour se deconnecter
-router.post('/logout',authentification , async(req, res)=>{
+router.post('/user/logout',authentification , async(req, res)=>{
     try {
         req.user.authTokens=req.user.authTokens.filter((authToken)=>{//on accède a tous les tokens et on filtre le token en cours d'utilisation
             return authToken.authToken!==req.authToken;
@@ -95,7 +95,7 @@ router.post('/logout',authentification , async(req, res)=>{
 });
 
 // route pour se deconnecter sur tous les appareils
-router.post('/logout/all',authentification , async(req, res)=>{
+router.post('/user/logout/all',authentification , async(req, res)=>{
     try {
         req.user.authTokens=[]; // on met un tableau vide ppur supprimer tous les tokens
         await req.user.save();
