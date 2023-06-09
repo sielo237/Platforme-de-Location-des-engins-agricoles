@@ -72,7 +72,7 @@ const loueurSchema=new mongoose.Schema({
         
     },
 
-    TypedeCompte:{
+    role:{
         type:String,
         default:"Loueur"
         
@@ -114,9 +114,9 @@ const loueurSchema=new mongoose.Schema({
 // fonction pour générer un token d'authentification et sauvegarder le loueur
 
 loueurSchema.methods.generateAuthToken= async function (){
-    const authToken= jwt.sign({_id:this._id.toString()}, process.env.CLE);
+    const authToken= jwt.sign({_id:this._id.toString(), role: this.role}, process.env.CLE);
     //envoi du tokens de l'utilisateur dans le tableau de token
-    this.authTokens.push({authToken}) ;
+    this.authTokens.push({authToken, role: this.role}) ;
     await this.save();
     return authToken; 
 }

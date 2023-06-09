@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Loueur = require('../models/loueur');
+const Admin = require('../models/admin');
 require('dotenv').config();
 
 const authentification = async (req, res, next) => {
@@ -11,11 +12,15 @@ const authentification = async (req, res, next) => {
     console.log(process.env.CLE);
 
     let user;
-    if (User) {
+    if (decodedToken.role === 'agriculteur') {
       user = await User.findOne({ _id: decodedToken._id, 'authTokens.authToken': authToken });
     }
-    if (!user && Loueur) {
+    if (!user && decodedToken.role === 'Loueur') {
       user = await Loueur.findOne({ _id: decodedToken._id, 'authTokens.authToken': authToken });
+    }
+
+    if (!user && decodedToken.role === 'Administrateur') {
+      user = await Admin.findOne({ _id: decodedToken._id, 'authTokens.authToken': authToken });
     }
 
     if (!user) throw new Error();

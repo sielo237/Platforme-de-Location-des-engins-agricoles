@@ -3,8 +3,9 @@ const express=require('express');
 const app=express();
 const cors=require('cors');
 const connection=require('./db');
-const userRoutes=require('./routes/user')
-const loueurRoutes=require('./routes/loueur')
+const userRoutes=require('./routes/user');
+const loueurRoutes=require('./routes/loueur');
+const adminRoutes=require('./routes/admin');
 require('dotenv').config();
 
 
@@ -18,6 +19,7 @@ app.use(cors());
 
 app.use(userRoutes);
 app.use(loueurRoutes);
+app.use(adminRoutes);
 
 
 // fonction pour générer une clé jwt
