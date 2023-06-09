@@ -35,7 +35,7 @@ const loueurSchema=new mongoose.Schema({
 		type:String, 
 		required:true,
         validate(v){
-            if(!validator.isNumeric(v)) throw new Error ("veuillez entrez une date correcte");
+            if(!validator.isNumeric(v)) throw new Error ("veuillez entrez un numéro correcte");
            
         }
         
@@ -78,6 +78,19 @@ const loueurSchema=new mongoose.Schema({
         
         
     },
+    document:{
+        type:String,
+        required: true
+        
+        
+    },
+
+    statut:{
+        type:String,
+        default:"en attente"
+        
+        
+    },
     date:{
         type:Date,
         default: Date.now
@@ -113,9 +126,9 @@ loueurSchema.methods.generateAuthToken= async function (){
 //creation de la fonction pour verifier les infos pour se logger
 loueurSchema.statics.findLoueur=async(email,password)=>{
     const loueur= await Loueur.findOne({email});
-    if(!loueur) throw new Error('email ou mot de passe incorrect')
+    if(!loueur) throw new Error("ce compte n'existe pas" )
     const isPasswordValid= await bcrypt.compare(password, loueur.password);
-    if(!isPasswordValid) throw new Error('email ou mot de passe incorrect');
+    if(!isPasswordValid) throw new Error('mot de passe incorrect');
     return loueur;
 }
 

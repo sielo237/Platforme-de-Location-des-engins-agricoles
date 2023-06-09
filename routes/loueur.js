@@ -1,22 +1,29 @@
 const express=require('express');
 const Loueur=require('../models/loueur');
 const authentification=require('../middlewares/authentification');
+const multer= require('multer');
+const path=require('path');
 const router= new express.Router();
 
 
-
-
+const upload = multer({ dest: path.resolve(__dirname, '../public') });
 
 //endpoint pour créer un compte
-router.post('/loueur/singup', async(req,res)=>{
+router.post('/loueur/singup', upload.single('document'), async(req,res)=>{
     const loueur= new Loueur(req.body);
-
+    loueur.document=req.file ? req.file.path : '';
+    if (!loueur.document) {
+        return res.status(400).json({ error: "Veuillez fournir un document obligatoirement." });
+      }
+      
     try {
         /* 
         //pour se connecter directement apres avoir créer un compte
         const authToken= await user.generateAuthToken();
         res.status(201).send({user,authToken});
         */
+        
+        
         const saveLoueur= await loueur.save();
         res.status(201).send(saveLoueur);
         
