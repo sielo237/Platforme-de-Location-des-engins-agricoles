@@ -78,13 +78,14 @@ const loueurSchema=new mongoose.Schema({
         
         
     },
+    /*
     document:{
         type:String,
         required: true
         
         
     },
-
+*/
     statut:{
         type:String,
         default:"en attente"

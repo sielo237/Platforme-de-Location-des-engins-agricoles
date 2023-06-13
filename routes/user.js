@@ -11,14 +11,14 @@ router.post('/user/singup', async(req,res)=>{
     const user= new User(req.body);
 
     try {
-        /* 
+        
         //pour se connecter directement apres avoir créer un compte
         const authToken= await user.generateAuthToken();
         res.status(201).send({user,authToken});
-        */
+        /* 
         const saveUser= await user.save();
         res.status(201).send(saveUser);
-        
+        */
     } catch (error) {
         res.status(400).send(error);
     }
@@ -26,17 +26,6 @@ router.post('/user/singup', async(req,res)=>{
 });
 
 
-//afficher tous les clients
-router.get('/users',authentification,async(req, res)=>{
-try {
-    const users=await User.find({});
-    res.send(users);
-} catch (error) {
-    res.status(500).send(error);
-    
-}
-
-});
 
 //afficher son profil
 router.get('/users/me',authentification,async(req, res)=>{
@@ -47,21 +36,6 @@ router.get('/users/me',authentification,async(req, res)=>{
     
     });
 
-
-
-//endpoint pour rechercher un client
-router.get('/user/singin/:id', authentification, async(req, res)=>{
-
-    const userI = req.params.id; 
-    try {
-        const user= await User.findById(userI);
-        res.send(user);
-       
-    } catch (error) {
-        res.status(500).send(error);
-        
-    }
-});
 
 
 // route pour se connecter

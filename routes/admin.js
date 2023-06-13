@@ -2,8 +2,12 @@ const express=require('express');
 const Admin=require('../models/admin');
 const Loueur=require('../models/loueur');
 const User=require('../models/user');
+const Engin=require('../models/engins');
+const Categorie=require('../models/categorie');
 const authentification=require('../middlewares/authentification');
+const emailService=require('../services/email');
 const router= new express.Router();
+
 
 
 
@@ -29,18 +33,54 @@ router.post('/admin/singup', async(req,res)=>{
   
 });
 
+// route pour se connecter
+router.post('/admin/login', async(req, res)=>{
+  try {
+      const admin=await  Admin.findAdmin(req.body.email, req.body.password);
+      const authToken= await admin.generateAuthToken();
+      res.send({admin, authToken });
+  } catch (error) {
+      res.status(400).send(error);
+      
+  }
+
+});
+
+
 
 // Middleware pour vérifier l'authentification et le rôle d'administrateur
-router.use('/admin', (req, res, next) => {
-    if (req.user.role !== 'Administrateur') {
-      return res.status(403).send('Accès refusé');
+//router.use('/admin/', authentification);
+
+// ajouter une catégorie
+router.post('/admin/categorie',authentification, async(req,res)=>{
+  const cat= new Categorie(req.body);
+  try {
+    const saveCat= await Categorie.create(cat);
+    res.status(201).send(saveCat);
+    } catch (error) {
+      res.status(400).send(error);
     }
-    next();
-  });
+
+
+});
+
+//afficher les categories
+router.get('/admin/Getcategorie',authentification, async(req,res)=>{
+  
+  try {
+    const cats= await Categorie.find({});
+    res.send(cats)
+    } catch (error) {
+      res.status(500).send(error);
+
+    }
+
+});
+
 
 
 //afficher tous les clients
-router.get('/admin/users',async(req, res)=>{
+router.get('/admin/users',authentification,async(req, res)=>{
 try {
     const users=await User.find({});
     res.send(users);
@@ -52,7 +92,7 @@ try {
 });
 
 //afficher tous les loueurs
-router.get('/admin/loueurs',async(req, res)=>{
+router.get('/admin/loueurs',authentification,async(req, res)=>{
     try {
         const loueurs=await Loueur.find({});
         res.send(loueurs);
@@ -64,7 +104,7 @@ router.get('/admin/loueurs',async(req, res)=>{
     });
 
     //afficher tous les loueurs dont le compte n'est pas validé
-router.get('/admin/loueur/valide',async(req, res)=>{
+router.get('/admin/loueur/valide',authentification,async(req, res)=>{
     try {
         const loueurs=await Loueur.find({statut: "en attente"});
         res.send(loueurs);
@@ -76,7 +116,7 @@ router.get('/admin/loueur/valide',async(req, res)=>{
     });
 
 //afficher son profil
-router.get('/admins/me',async(req, res)=>{
+router.get('/admins/me',authentification,async(req, res)=>{
     
         
         res.send(req.user);
@@ -87,7 +127,7 @@ router.get('/admins/me',async(req, res)=>{
 
 
 // Endpoint pour rechercher un compte (Loueur ou Utilisateur) par e-mail
-router.get('/admin/accounts/search', async (req, res) => {
+router.get('/admin/accounts/search',authentification, async (req, res) => {
     const email = req.query.email;
   
     try {
@@ -108,8 +148,74 @@ router.get('/admin/accounts/search', async (req, res) => {
     }
   });
   
+// afficher les engins en attente
+  router.get('/admin/engins/attente', async (req, res) => {
+    try {
+      const enginsEnAttente = await Engin.find({ statut: 'en attente de confirmation' }).populate('loueur');
+  
+      const enginsAValider = enginsEnAttente.map((engin) => {
+
+        const photosUrl = engin.photos.map((photo) => `${req.protocol}://${req.get('host')}/public/photo/${photo}`);
+  
+        
+        const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
+  
+        // Retourner les informations de l'engin avec les URL des photos et du document
+        return {
+          _id: engin._id,
+          nom: engin.nom,
+          description: engin.description,
+          loueur: engin.loueur,
+          photos: photosUrl,
+          document: documentUrl,
+        };
+      });
+  
+      res.send(enginsAValider);
+    } catch (error) {
+      res.status(500).send(error);
+    }
+  });
+
+ 
+ // valider ou refuser une publication d'engin
+router.put('/admin/validation/:enginId', authentificationAdmin, async (req, res) => {
+  const enginId = req.params.enginId;
+  const { statut, commentaire } = req.body;
+
+  try {
+    const engin = await Engin.findById(enginId);
+    if (!engin) {
+      return res.status(404).send("L'engin spécifié n'existe pas");
+    }
+
+    // Mettre à jour le statut de l'engin
+    engin.statut = statut;
+    engin.commentaire = commentaire;
+    await engin.save();
+
+    // Envoi d'un e-mail au loueur
+    const loueur = await Loueur.findById(engin.loueur);
+    if (!loueur) {
+      return res.status(404).send("Le loueur associé à l'engin n'existe pas");
+    }
+
+    const message = (statut === 'validé') ? "Votre publication d'engin a été validée." : "Votre publication d\'engin a été refusée.";
+    const subject = (statut === 'validé') ? "Publication d'engin validée" : "Publication d\'engin refusée";
+    const emailContent = `${message}\n\nCommentaire : ${commentaire}`;
+
+    await emailService.sendEmail(loueur.email, subject, emailContent);
+
+    res.send(engin);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
+  /*
   // Endpoint pour mettre à jour le statut d'un compte loueur à partir de son email
-  router.patch('/admin/loueur/:email', async (req, res) => {
+  router.patch('/admin/loueur/:email',authentification, async (req, res) => {
     const email = req.params.email;
     const statut = req.body.statut;
   
@@ -126,23 +232,11 @@ router.get('/admin/accounts/search', async (req, res) => {
       res.status(500).send(error);
     }
   });
-  
+  */
 
-// route pour se connecter
-router.post('/admin/login', async(req, res)=>{
-    try {
-        const admin=await  Admin.findAdmin(req.body.email, req.body.password);
-        const authToken= await admin.generateAuthToken();
-        res.send({admin, authToken });
-    } catch (error) {
-        res.status(400).send(error);
-        
-    }
-
-});
 
 // route pour se deconnecter
-router.post('/admin/logout' , async(req, res)=>{
+router.post('/admin/logout' ,authentification, async(req, res)=>{
     try {
         req.admin.authTokens=req.admin.authTokens.filter((authToken)=>{//on accède a tous les tokens et on filtre le token en cours d'utilisation
             return authToken.authToken!==req.authToken;
@@ -159,7 +253,7 @@ router.post('/admin/logout' , async(req, res)=>{
 });
 
 // route pour se deconnecter sur tous les appareils
-router.post('/admin/logout/all' , async(req, res)=>{
+router.post('/admin/logout/all' ,authentification, async(req, res)=>{
     try {
         req.admin.authTokens=[]; // on met un tableau vide ppur supprimer tous les tokens
         await req.admin.save();
