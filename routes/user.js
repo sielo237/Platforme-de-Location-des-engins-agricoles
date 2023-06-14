@@ -6,6 +6,49 @@ const router= new express.Router();
 
 
 
+// afficher les engins en valide
+router.get('/user/engins/valide', async (req, res) => {
+    /*
+    try {
+      const enginsValide = await Engin.find({ statut: 'validé' }).populate('loueur').populate('categorie');
+  
+      const enginsAValider = enginsValide.map((engin) => {
+        const photosUrl = engin.photos.map((photo) => `${req.protocol}://${req.get('host')}/public/photo/${photo}`);
+  
+        //const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
+      */
+        try {
+            const enginsValide = await Engin.find({ statut: 'validé' })
+              .populate('loueur')
+              .populate('categorie');
+          
+            const enginsAValider = enginsValide.map((engin) => {
+              const photosUrl = engin.photos.map((photo) => {
+                const photoUrl = `${req.protocol}://${req.get('host')}/public/photo/${photo}`;
+                return photoUrl.split(path.sep).join('/');
+              });
+          
+        return {
+          _id: engin._id,
+          nom: engin.nom,
+          description: engin.description,
+          loueur: engin.loueur,
+          categorie: engin.categorie.nom,
+          photos: photosUrl,
+        };
+      });
+  
+      res.send(enginsAValider);
+    } catch (error) {
+      res.status(500).send(error);
+    }
+  });
+
+
+
+
+
+
 //endpoint pour créer un compte
 router.post('/user/singup', async(req,res)=>{
     const user= new User(req.body);

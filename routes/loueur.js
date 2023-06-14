@@ -1,5 +1,7 @@
 const express=require('express');
 const Loueur=require('../models/loueur');
+const Engin=require('../models/engins');
+const Categorie=require('../models/categorie');
 const authentification=require('../middlewares/authentification');
 const multer= require('multer');
 const path=require('path');
@@ -7,41 +9,43 @@ const router= new express.Router();
 
 
 //const upload = multer({ dest: path.resolve(__dirname, '../public') });
+
 // Configurer Multer pour gérer l'enregistrement des fichiers
+
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      if (file.fieldname === 'photos') {
-        cb(null, 'public/photos');
-      } else if (file.fieldname === 'document') {
-        cb(null, 'public/documents');
-      } else {
-        cb(new Error('Champ de fichier invalide'));
-      }
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const extension = path.extname(file.originalname);
-      cb(null, uniqueSuffix + extension);
-    },
-  });
-  
-  const upload = multer({
-    storage,
-    limits: {
-      fileSize:  10 * 1024 * 1024, // Limite la taille des fichiers à 10 Mo
-    },
-    fileFilter: (req, file, cb) => {
-      if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'application/pdf'
-      ) {
-        cb(null, true);
-      } else {
-        cb(new Error('type de fichier non supporté'));
-      }
-    },
-  });
+  destination: (req, file, cb) => {
+    if (file.fieldname === 'photos') {
+      cb(null, 'public/photos');
+    } else if (file.fieldname === 'document') {
+      cb(null, 'public/documents');
+    } else {
+      cb(new Error('Champ de fichier invalide'));
+    }
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const extension = path.extname(file.originalname);
+    cb(null, uniqueSuffix + extension);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // Limite la taille des fichiers à 10 Mo
+  },
+  fileFilter: (req, file, cb) => {
+    if (
+      file.mimetype === 'image/jpeg' ||
+      file.mimetype === 'image/png' ||
+      file.mimetype === 'application/pdf'
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error('Type de fichier non supporté'));
+    }
+  },
+});
 
 
  router.post('/loueur/singup', async(req,res)=>{
@@ -64,39 +68,42 @@ const storage = multer.diskStorage({
   
 });
 
-// route pour demander une publication d'engin
-router.post('/loueur/engin',authentification,upload.array('photos', 7), upload.single('document'), async(req,res)=>{
-    const { categorie, nom, description} = req.body;
-    const loueurId=req.user._id;
-    const photos = req.files.map(file => file.path.replace('public/', '')); // Récupérer les chemins des fichiers photos sans le préfixe "public/"
-     const document = req.file.path.replace('public/', ''); // Récupérer le chemin du fichier document sans le préfixe "public/"
+// route pour faire une publication 
+router.post('/loueur/engin', authentification, upload.fields([
+  { name: 'photos', maxCount: 7 },
+  { name: 'document', maxCount: 1 }
+]), async (req, res) => {
+  
+  console.log(req.files);
+  const { categorie, nom, description } = req.body;
+  const loueurId = req.user._id;
+  const photos = req.files['photos'].map(file => file.path.replace('public/', ''));
+  const document = req.files['document'][0].path.replace('public/', '');
 
-
-    
-    try {
-        // Vérifier si la catégorie existe dans la base de données
+  try {
+    // Vérifier si la catégorie existe 
     const existingCategorie = await Categorie.findOne({ nom: categorie });
     if (!existingCategorie) {
       return res.status(404).send("La catégorie spécifiée n'existe pas");
     }
-    const engin= new Engin({
-        nom,
-        description,
-        loueur:loueurId, 
-        categorie: existingCategorie._id, 
-        photos,
-        document, 
 
+    const engin = new Engin({
+      nom,
+      description,
+      loueur: loueurId,
+      categorie: existingCategorie._id,
+      photos,
+      document,
     });
 
-        const saveEngin= await engin.save();
-        res.status(201).send(saveEngin);
+    const saveEngin = await engin.save();
+    res.status(201).send(saveEngin);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
 
-    } catch(error){
-        res.status(500).send(error)
-    }
 
-})
 
 //afficher son profil
 router.get('/loueur/me',authentification,async(req, res)=>{

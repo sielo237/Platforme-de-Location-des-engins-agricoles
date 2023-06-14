@@ -4,6 +4,7 @@ const Loueur=require('../models/loueur');
 const User=require('../models/user');
 const Engin=require('../models/engins');
 const Categorie=require('../models/categorie');
+const path=require('path');
 const authentification=require('../middlewares/authentification');
 const emailService=require('../services/email');
 const router= new express.Router();
@@ -149,25 +150,42 @@ router.get('/admin/accounts/search',authentification, async (req, res) => {
   });
   
 // afficher les engins en attente
-  router.get('/admin/engins/attente', async (req, res) => {
+  router.get('/admin/engins/attente',authentification, async (req, res) => {
+    
+
+try {
+  const enginsEnAttente = await Engin.find({ statut: 'en attente de confirmation' })
+    .populate('loueur')
+    .populate('categorie');
+
+  const enginsAValider = enginsEnAttente.map((engin) => {
+    const photosUrl = engin.photos.map((photo) => {
+      const photoUrl = `${req.protocol}://${req.get('host')}/public/photo/${photo}`;
+      return photoUrl.split(path.sep).join('/');
+    });
+
+    const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
+    const documentUrlFormatted = documentUrl.split(path.sep).join('/');
+
+  /*  
     try {
-      const enginsEnAttente = await Engin.find({ statut: 'en attente de confirmation' }).populate('loueur');
+      const enginsEnAttente = await Engin.find({ statut: 'en attente de confirmation' }).populate('loueur').populate('categorie');
   
       const enginsAValider = enginsEnAttente.map((engin) => {
-
+        
         const photosUrl = engin.photos.map((photo) => `${req.protocol}://${req.get('host')}/public/photo/${photo}`);
   
         
         const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
-  
-        // Retourner les informations de l'engin avec les URL des photos et du document
+        */
         return {
           _id: engin._id,
           nom: engin.nom,
           description: engin.description,
           loueur: engin.loueur,
+          categorie: engin.categorie.nom,
           photos: photosUrl,
-          document: documentUrl,
+          document: documentUrlFormatted,
         };
       });
   
@@ -179,7 +197,7 @@ router.get('/admin/accounts/search',authentification, async (req, res) => {
 
  
  // valider ou refuser une publication d'engin
-router.put('/admin/validation/:enginId', authentificationAdmin, async (req, res) => {
+router.put('/admin/validation/:enginId', authentification, async (req, res) => {
   const enginId = req.params.enginId;
   const { statut, commentaire } = req.body;
 
