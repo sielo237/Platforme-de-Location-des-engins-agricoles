@@ -1,54 +1,97 @@
 const express=require('express');
-const User=require('../models/user');
-const authentification=require('../middlewares/authentification');
+const Location=require('../models/location');
+const Engin=require('../models/engins');
+const Loueur=require('../models/loueur');
+const Categorie=require('../models/categorie');
 const router= new express.Router();
 
 
 
 
-// afficher les engins en valide
+// afficher les engins valide
 router.get('/user/engins/valide', async (req, res) => {
-    /*
+    
+
     try {
-      const enginsValide = await Engin.find({ statut: 'validé' }).populate('loueur').populate('categorie');
-  
+      const enginsValide = await Engin.find({ statut: 'validé' })
+        .populate('loueur')
+        .populate('categorie');
       const enginsAValider = enginsValide.map((engin) => {
-        const photosUrl = engin.photos.map((photo) => `${req.protocol}://${req.get('host')}/public/photo/${photo}`);
-  
-        //const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
-      */
-        try {
-            const enginsValide = await Engin.find({ statut: 'validé' })
-              .populate('loueur')
-              .populate('categorie');
+        console.log(engin);
+        const photosUrl = engin.photos.map((photo) => {
+          const photoUrl = `${req.protocol}://${req.get('host')}/public/photo/${photo}`;
           
-            const enginsAValider = enginsValide.map((engin) => {
-              const photosUrl = engin.photos.map((photo) => {
-                const photoUrl = `${req.protocol}://${req.get('host')}/public/photo/${photo}`;
-                return photoUrl.split(path.sep).join('/');
-              });
+          return photoUrl.split(path.sep).join('/');
           
-        return {
-          _id: engin._id,
-          nom: engin.nom,
-          description: engin.description,
-          loueur: engin.loueur,
-          categorie: engin.categorie.nom,
-          photos: photosUrl,
-        };
+        });
+        
+        const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
+    const documentUrlFormatted = documentUrl.split(path.sep).join('/');
+    
+            return {
+              _id: engin._id,
+              nom: engin.nom,
+              description: engin.description,
+              loueur: engin.loueur,
+              categorie: engin.categorie.nom,
+              photos: photosUrl,
+              document: documentUrlFormatted,
+            };
+          });
+      
+          res.send(enginsAValider);
+          
+          console.log(enginsAValider);
+        } catch (error) {
+          res.status(500).send(error);
+        }
       });
-  
-      res.send(enginsAValider);
-    } catch (error) {
-      res.status(500).send(error);
+
+
+
+// route pour faire une location
+
+router.post('/user/location', async (req, res) => {
+  try {
+    const enginId = req.body.enginId;
+    
+    const engin = await Engin.findById(enginId);
+    //console.log(engin);
+    if (!engin) {
+      return res.status(404).send("L'engin spécifié n'existe pas");
     }
-  });
+
+    const loueur = engin.loueur;
+    const nouvelleCommande = new Location({
+      nom: req.body.nom,
+      prenom: req.body.prenom,
+      email: req.body.email,
+      engin: enginId,
+      loueur: loueur,
+      numeroTel: req.body.numeroTel,
+      dateNaissance: req.body.dateNaissance,
+      pays: req.body.pays,
+      adresseLivraison: req.body.adresseLivraison,
+      dateDebut: req.body.dateDebut,
+      dateFin: req.body.dateFin,
+      prixTotal:req.body.prixTotal,
+    });
+
+   
+    const locac = await nouvelleCommande.save();
+    res.send(locac);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
 
 
 
 
 
 
+
+/*
 //endpoint pour créer un compte
 router.post('/user/singup', async(req,res)=>{
     const user= new User(req.body);
@@ -61,7 +104,7 @@ router.post('/user/singup', async(req,res)=>{
         /* 
         const saveUser= await user.save();
         res.status(201).send(saveUser);
-        */
+        
     } catch (error) {
         res.status(400).send(error);
     }
@@ -123,6 +166,6 @@ router.post('/user/logout/all',authentification , async(req, res)=>{
     }
 
 });
-
+*/
 
 module.exports=router;

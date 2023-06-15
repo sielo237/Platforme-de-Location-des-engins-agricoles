@@ -2,6 +2,7 @@ const express=require('express');
 const Loueur=require('../models/loueur');
 const Engin=require('../models/engins');
 const Categorie=require('../models/categorie');
+const Location=require('../models/location');
 const authentification=require('../middlewares/authentification');
 const multer= require('multer');
 const path=require('path');
@@ -75,7 +76,7 @@ router.post('/loueur/engin', authentification, upload.fields([
 ]), async (req, res) => {
   
   console.log(req.files);
-  const { categorie, nom, description } = req.body;
+  const { categorie, nom, description, prix } = req.body;
   const loueurId = req.user._id;
   const photos = req.files['photos'].map(file => file.path.replace('public/', ''));
   const document = req.files['document'][0].path.replace('public/', '');
@@ -94,6 +95,7 @@ router.post('/loueur/engin', authentification, upload.fields([
       categorie: existingCategorie._id,
       photos,
       document,
+      prix,
     });
 
     const saveEngin = await engin.save();
@@ -104,6 +106,41 @@ router.post('/loueur/engin', authentification, upload.fields([
 });
 
 
+// afficher ses demandes de location
+router.get('/loueur/location',authentification, async (req, res) => {
+  try {
+   const loueurId = req.user._id;
+    //console.log(loueurId) ;
+    const demandesLocation = await Location.find({ loueur: loueurId }).populate('engin');
+    console.log(demandesLocation);
+    res.send(demandesLocation);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// valider une location
+router.put('/loueur/ValideLocation/:locationId/',authentification, async (req, res) => {
+  try {
+    const locationId = req.params.locationId;
+    const location = await Location.findById(locationId).populate('engin');
+
+    if (!location) {
+      return res.status(404).send("cette locatin  n'existe pas");
+    }
+
+    const engin = location.engin;
+    location.statut = 'validée';
+    engin.disponibilite = false;
+    await location.save();
+    await engin.save();
+
+    res.send('La location a été validée');
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 
 //afficher son profil
 router.get('/loueur/me',authentification,async(req, res)=>{
@@ -113,6 +150,20 @@ router.get('/loueur/me',authentification,async(req, res)=>{
     
     
     });
+
+// route pour afficher ses engins
+router.get('/loueur/engins', authentification, async (req, res) => {
+  const loueurId = req.user._id;
+
+  try {
+    const engins = await Engin.find({ loueur: loueurId }).populate('categorie');
+    res.send(engins);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
 
 
 // route pour se connecter
@@ -131,7 +182,7 @@ router.post('/loueur/login', async(req, res)=>{
 // route pour se deconnecter
 router.post('/loueur/logout',authentification , async(req, res)=>{
     try {
-        req.loueur.authTokens=req.loueur.authTokens.filter((authToken)=>{//on accède a tous les tokens et on filtre le token en cours d'utilisation
+        req.user.authTokens=req.user.authTokens.filter((authToken)=>{//on accède a tous les tokens et on filtre le token en cours d'utilisation
             return authToken.authToken!==req.authToken;
 
 

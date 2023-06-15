@@ -1,7 +1,7 @@
 const express=require('express');
 const Admin=require('../models/admin');
 const Loueur=require('../models/loueur');
-const User=require('../models/user');
+const Location=require('../models/location');
 const Engin=require('../models/engins');
 const Categorie=require('../models/categorie');
 const path=require('path');
@@ -80,10 +80,10 @@ router.get('/admin/Getcategorie',authentification, async(req,res)=>{
 
 
 
-//afficher tous les clients
-router.get('/admin/users',authentification,async(req, res)=>{
+//afficher toutes les location
+router.get('/admin/location',authentification,async(req, res)=>{
 try {
-    const users=await User.find({});
+    const users=await Location.find({});
     res.send(users);
 } catch (error) {
     res.status(500).send(error);
@@ -137,7 +137,7 @@ router.get('/admin/accounts/search',authentification, async (req, res) => {
       account = await Loueur.findOne({ email });
   
       if (!account) {
-        account = await User.findOne({ email });
+        account = await Location.findOne({ email });
   
         if (!account) {
           return res.status(404).send('Aucun compte trouvé');

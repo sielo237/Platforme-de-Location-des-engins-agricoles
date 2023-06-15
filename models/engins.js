@@ -43,6 +43,11 @@ const EnginSchema= new mongoose.Schema({
 
     },
 
+    prix:{
+        type: Number,
+        required: true
+    },
+
     commentaire:{
         type: String,
         default:''
