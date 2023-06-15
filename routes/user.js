@@ -3,6 +3,7 @@ const Location=require('../models/location');
 const Engin=require('../models/engins');
 const Loueur=require('../models/loueur');
 const Categorie=require('../models/categorie');
+const path=require('path');
 const router= new express.Router();
 
 
@@ -17,7 +18,7 @@ router.get('/user/engins/valide', async (req, res) => {
         .populate('loueur')
         .populate('categorie');
       const enginsAValider = enginsValide.map((engin) => {
-        console.log(engin);
+        
         const photosUrl = engin.photos.map((photo) => {
           const photoUrl = `${req.protocol}://${req.get('host')}/public/photo/${photo}`;
           
@@ -35,6 +36,7 @@ router.get('/user/engins/valide', async (req, res) => {
               loueur: engin.loueur,
               categorie: engin.categorie.nom,
               photos: photosUrl,
+              disponibilite:engin.disponibilite,
               document: documentUrlFormatted,
             };
           });
@@ -43,6 +45,7 @@ router.get('/user/engins/valide', async (req, res) => {
           
           console.log(enginsAValider);
         } catch (error) {
+            console.log(error);
           res.status(500).send(error);
         }
       });

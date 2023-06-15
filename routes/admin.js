@@ -92,6 +92,18 @@ try {
 
 });
 
+//afficher toutes les location non validé
+router.get('/admin/NonValide',authentification,async(req, res)=>{
+  try {
+      const users=await Location.find({statut: 'en attente'}).populate('loueur');
+      res.send(users);
+  } catch (error) {
+      res.status(500).send(error);
+      
+  }
+  
+  });
+
 //afficher tous les loueurs
 router.get('/admin/loueurs',authentification,async(req, res)=>{
     try {
