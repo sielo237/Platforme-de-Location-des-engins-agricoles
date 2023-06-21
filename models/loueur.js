@@ -72,6 +72,17 @@ const loueurSchema=new mongoose.Schema({
         
     },
 
+
+    noteTotale: {
+        type: Number,
+        default: 0,
+      },
+      
+    nombreAvis: {
+        type: Number,
+        default: 0,
+      },
+
     role:{
         type:String,
         default:"Loueur"

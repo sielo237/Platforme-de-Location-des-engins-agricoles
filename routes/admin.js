@@ -65,20 +65,6 @@ router.post('/admin/categorie',authentification, async(req,res)=>{
 
 });
 
-//afficher les categories
-router.get('/admin/Getcategorie',authentification, async(req,res)=>{
-  
-  try {
-    const cats= await Categorie.find({});
-    res.send(cats)
-    } catch (error) {
-      res.status(500).send(error);
-
-    }
-
-});
-
-
 
 //afficher toutes les location
 router.get('/admin/location',authentification,async(req, res)=>{
@@ -179,17 +165,6 @@ try {
     const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
     const documentUrlFormatted = documentUrl.split(path.sep).join('/');
 
-  /*  
-    try {
-      const enginsEnAttente = await Engin.find({ statut: 'en attente de confirmation' }).populate('loueur').populate('categorie');
-  
-      const enginsAValider = enginsEnAttente.map((engin) => {
-        
-        const photosUrl = engin.photos.map((photo) => `${req.protocol}://${req.get('host')}/public/photo/${photo}`);
-  
-        
-        const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
-        */
         return {
           _id: engin._id,
           nom: engin.nom,
@@ -208,6 +183,55 @@ try {
   });
 
  
+
+
+  // afficher les publication mise a jour et dont on doit valider
+  router.get('/admin/engins/maj',authentification, async (req, res) => {
+    
+
+    try {
+      const enginsEnAttente = await Engin.find({ statut: 'Mise a jour' })
+        .populate('loueur')
+        .populate('categorie');
+    
+      const enginsAValider = enginsEnAttente.map((engin) => {
+        const photosUrl = engin.photos.map((photo) => {
+          const photoUrl = `${req.protocol}://${req.get('host')}/public/photo/${photo}`;
+          return photoUrl.split(path.sep).join('/');
+        });
+    
+        const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
+        const documentUrlFormatted = documentUrl.split(path.sep).join('/');
+    
+      /*  
+        try {
+          const enginsEnAttente = await Engin.find({ statut: 'en attente de confirmation' }).populate('loueur').populate('categorie');
+      
+          const enginsAValider = enginsEnAttente.map((engin) => {
+            
+            const photosUrl = engin.photos.map((photo) => `${req.protocol}://${req.get('host')}/public/photo/${photo}`);
+      
+            
+            const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
+            */
+            return {
+              _id: engin._id,
+              nom: engin.nom,
+              description: engin.description,
+              loueur: engin.loueur,
+              categorie: engin.categorie.nom,
+              photos: photosUrl,
+              document: documentUrlFormatted,
+            };
+          });
+      
+          res.send(enginsAValider);
+        } catch (error) {
+          res.status(500).send(error);
+        }
+      });
+
+      
  // valider ou refuser une publication d'engin
 router.put('/admin/validation/:enginId', authentification, async (req, res) => {
   const enginId = req.params.enginId;
@@ -231,7 +255,7 @@ router.put('/admin/validation/:enginId', authentification, async (req, res) => {
     }
 
     const message = (statut === 'validé') ? "Votre publication d'engin a été validée." : "Votre publication d\'engin a été refusée.";
-    const subject = (statut === 'validé') ? "Publication d'engin validée" : "Publication d\'engin refusée";
+    const subject = (statut === 'validé') ? "Publication d'engin validée" : "Publication d'engin refusée";
     const emailContent = `${message}\n\nCommentaire : ${commentaire}`;
 
     await emailService.sendEmail(loueur.email, subject, emailContent);

@@ -2,6 +2,7 @@ const express=require('express');
 const Location=require('../models/location');
 const Engin=require('../models/engins');
 const Loueur=require('../models/loueur');
+const Avis=require('../models/avis');
 const Categorie=require('../models/categorie');
 const path=require('path');
 const router= new express.Router();
@@ -89,86 +90,93 @@ router.post('/user/location', async (req, res) => {
 });
 
 
-
-
-
-
-
-/*
-//endpoint pour créer un compte
-router.post('/user/singup', async(req,res)=>{
-    const user= new User(req.body);
-
-    try {
-        
-        //pour se connecter directement apres avoir créer un compte
-        const authToken= await user.generateAuthToken();
-        res.status(201).send({user,authToken});
-        /* 
-        const saveUser= await user.save();
-        res.status(201).send(saveUser);
-        
-    } catch (error) {
-        res.status(400).send(error);
-    }
+//afficher les categories
+router.get('/user/Getcategorie', async(req,res)=>{
   
-});
-
-
-
-//afficher son profil
-router.get('/users/me',authentification,async(req, res)=>{
-    
-        
-        res.send(req.user);
-    
-    
-    });
-
-
-
-// route pour se connecter
-router.post('/user/login', async(req, res)=>{
-    try {
-        const user=await  User.findUser(req.body.email, req.body.password);
-        const authToken= await user.generateAuthToken();
-        res.send({user, authToken });
+  try {
+    const cats= await Categorie.find({});
+    res.send(cats)
     } catch (error) {
-        res.status(400).send(error);
-        
+      res.status(500).send(error);
+
     }
 
 });
 
-// route pour se deconnecter
-router.post('/user/logout',authentification , async(req, res)=>{
-    try {
-        req.user.authTokens=req.user.authTokens.filter((authToken)=>{//on accède a tous les tokens et on filtre le token en cours d'utilisation
-            return authToken.authToken!==req.authToken;
 
 
+// Route pour créer un avis
+router.post('/user/avis', async (req, res) => {
+
+      try {
+        const { loueurId, commentaire, note, email } = req.body;
+    
+        const loueur = await Loueur.findById(loueurId);
+    
+        if (!loueur) {
+          return res.status(404).send("Le loueur spécifié n'existe pas");
+        }
+
+        if (note>5) {
+          return res.status(400).send("La note ne dois pas dépasser 5");
+        }
+
+    
+        // Calcule la nouvelle note totale
+        const nouvelleNoteTotale = (loueur.noteTotale * loueur.nombreAvis + note) / (loueur.nombreAvis + 1);
+    
+        // MAJ du loueur avec la nouvelle note totale et le nombre d'avis
+        loueur.noteTotale = nouvelleNoteTotale;
+        loueur.nombreAvis = loueur.nombreAvis + 1;
+    
+        await loueur.save();
+    
+        // Crée un nouvel avis
+        const nouvelAvis = new Avis({
+          email,
+          loueurId: loueurId,
+          commentaire,
+          note,
         });
-       await  req.user.save();
-       res.send();
-    } catch (error) {
+    
+        const avis = await nouvelAvis.save();
+        res.status(201).send(avis);
+      } catch (error) {
         res.status(500).send(error);
-        
-    }
+      }
+    });
+    
 
+// Route pour obtenir tous les avis d'un loueur
+router.get('/loueur/Avis/:loueurId', async (req, res) => {
+  try {
+    const loueurId = req.params.loueurId;
+    const avis = await Avis.find({ loueurId: loueurId });
+
+    res.status(200).send(avis);
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
 
-// route pour se deconnecter sur tous les appareils
-router.post('/user/logout/all',authentification , async(req, res)=>{
-    try {
-        req.user.authTokens=[]; // on met un tableau vide ppur supprimer tous les tokens
-        await req.user.save();
-       res.send();
-    } catch (error) {
-        res.status(500).send(error);
-        
-    }
 
+// route pour afficher la note totale d'un loeur
+router.get('/loueur/note/:loueurId', async (req, res) => {
+  try {
+    const loueurId = req.params.loueurId;
+
+    const loueur = await Loueur.findById(loueurId);
+    const noteTotale = loueur.noteTotale;
+
+    res.status(200).send({ noteTotale });
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
-*/
+
+
+
+
+
 
 module.exports=router;

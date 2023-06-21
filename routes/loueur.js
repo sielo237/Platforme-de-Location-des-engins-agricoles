@@ -8,7 +8,6 @@ const multer= require('multer');
 const path=require('path');
 const router= new express.Router();
 
-
 //const upload = multer({ dest: path.resolve(__dirname, '../public') });
 
 // Configurer Multer pour gérer l'enregistrement des fichiers
@@ -69,7 +68,7 @@ const upload = multer({
   
 });
 
-// route pour faire une publication 
+// route pour faire une publication d'engin
 router.post('/loueur/engin', authentification, upload.fields([
   { name: 'photos', maxCount: 7 },
   { name: 'document', maxCount: 1 }
@@ -78,9 +77,12 @@ router.post('/loueur/engin', authentification, upload.fields([
   console.log(req.files);
   const { categorie, nom, description, prix } = req.body;
   const loueurId = req.user._id;
+  /*
   const photos = req.files['photos'].map(file => file.path.replace('public/', ''));
   const document = req.files['document'][0].path.replace('public/', '');
-
+  */
+  const photos = req.files['photos'].map(file => file.path.replace('public\\', '').split('\\').join('/'));
+  const document = req.files['document'][0].path.replace('public\\', '').split('\\').join('/');
   try {
     // Vérifier si la catégorie existe 
     const existingCategorie = await Categorie.findOne({ nom: categorie });
@@ -102,6 +104,52 @@ router.post('/loueur/engin', authentification, upload.fields([
     res.status(201).send(saveEngin);
   } catch (error) {
     res.status(500).send(error);
+  }
+});
+
+// Route pour mettre à jour les informations d'un engin
+router.put('/loueur/engin/:id', authentification, upload.fields([
+  { name: 'photos', maxCount: 7 },
+  { name: 'document', maxCount: 1 }
+]), async (req, res) => {
+  const enginId = req.params.id;
+  const { categorie, nom, description, prix } = req.body;
+  const photos = req.files['photos'].map(file => file.path.replace('public\\', '').split('\\').join('/'));
+  const document = req.files['document'][0].path.replace('public\\', '').split('\\').join('/');
+  try {
+
+    // Vérifier si l'engin existe
+    const existE = await Engin.findById(enginId);
+    if (!existE) {
+      return res.status(404).send("L'engin spécifié n'existe pas");
+    }
+
+    const existC= await Categorie.findOne({ nom: categorie });
+    if (!existC) {
+      return res.status(404).send("La catégorie spécifiée n'existe pas");
+    }
+
+    // Mettre à jour les champs de l'engin
+    existE.nom = nom;
+    existE.description = description;
+    existE.categorie = existC._id;
+    existE.prix = prix;
+
+    if (photos.length > 0) {
+      existE.photos = photos;
+    }
+
+    if (document) {
+      existE.document = document;
+    }
+    // Réinitialiser le statut de l'engin
+    existE.statut = 'Mise a jour';
+
+    const updatedEngin = await existE.save();
+    res.status(200).send(updatedEngin);
+  } catch (error) {
+    res.status(500).send("impossible d'effectuer la MAJ "+error);
+    
   }
 });
 
@@ -136,6 +184,28 @@ router.put('/loueur/ValideLocation/:locationId/',authentification, async (req, r
     await engin.save();
 
     res.send('La location a été validée');
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Refuser une location
+router.put('/loueur/RefuseLocation/:locationId/', authentification, async (req, res) => {
+  try {
+    const locationId = req.params.locationId;
+    const location = await Location.findById(locationId).populate('engin');
+
+    if (!location) {
+      return res.status(404).send("Cette location n'existe pas");
+    }
+
+    const engin = location.engin;
+    location.statut = 'refusée';
+    engin.disponibilite = true;
+    await location.save();
+    await engin.save();
+
+    res.send('La location a été refusée');
   } catch (error) {
     res.status(500).send(error);
   }
@@ -187,7 +257,7 @@ router.post('/loueur/logout',authentification , async(req, res)=>{
 
 
         });
-       await  req.loueur.save();
+       await  req.user.save();
        res.send();
     } catch (error) {
         res.status(500).send(error);
@@ -199,8 +269,8 @@ router.post('/loueur/logout',authentification , async(req, res)=>{
 // route pour se deconnecter sur tous les appareils
 router.post('/loueur/logout/all',authentification , async(req, res)=>{
     try {
-        req.loueur.authTokens=[]; // on met un tableau vide ppur supprimer tous les tokens
-        await req.loueur.save();
+        req.user.authTokens=[]; // on met un tableau vide ppur supprimer tous les tokens
+        await req.user.save();
        res.send();
     } catch (error) {
         res.status(500).send(error);
