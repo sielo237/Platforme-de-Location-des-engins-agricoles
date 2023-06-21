@@ -117,7 +117,7 @@ router.post('/user/avis', async (req, res) => {
           return res.status(404).send("Le loueur spécifié n'existe pas");
         }
 
-        if (note>5) {
+        if (note>5 || 0> note ) {
           return res.status(400).send("La note ne dois pas dépasser 5");
         }
 
