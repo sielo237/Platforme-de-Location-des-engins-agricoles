@@ -4,6 +4,7 @@ const Engin=require('../models/engins');
 const Loueur=require('../models/loueur');
 const Avis=require('../models/avis');
 const Categorie=require('../models/categorie');
+const emailService=require('../services/email');
 const path=require('path');
 const router= new express.Router();
 
@@ -53,41 +54,66 @@ router.get('/user/engins/valide', async (req, res) => {
 
 
 
-// route pour faire une location
 
+// route pour faire une location
 router.post('/user/location', async (req, res) => {
   try {
     const enginId = req.body.enginId;
     
     const engin = await Engin.findById(enginId);
-    //console.log(engin);
     if (!engin) {
       return res.status(404).send("L'engin spécifié n'existe pas");
     }
 
-    const loueur = engin.loueur;
+    const loueur = await Loueur.findById(engin.loueur);
+    if (!loueur) {
+      return res.status(404).send("Le loueur associé à l'engin n'existe pas");
+    }
+
+    
     const nouvelleCommande = new Location({
       nom: req.body.nom,
       prenom: req.body.prenom,
       email: req.body.email,
       engin: enginId,
-      loueur: loueur,
+      loueur: loueur._id,
       numeroTel: req.body.numeroTel,
       dateNaissance: req.body.dateNaissance,
       pays: req.body.pays,
       adresseLivraison: req.body.adresseLivraison,
       dateDebut: req.body.dateDebut,
       dateFin: req.body.dateFin,
-      prixTotal:req.body.prixTotal,
+      prixTotal: req.body.prixTotal,
     });
 
-   
     const locac = await nouvelleCommande.save();
+
+    // Envoi d'un e-mail au locataire
+    const locataireMessage = `Votre demande de location de l'engin "${engin.nom}" a été enregistrée et est en attente de confirmation.`;
+    const locataireSubject = "Demande de location enregistrée";
+    const locataireEmailContent = `${locataireMessage}`;
+
+    await emailService.sendEmail(req.body.email, locataireSubject, locataireEmailContent);
+
+    // Envoi d'un e-mail au loueur
+    const loueurMessage = `Vous avez une demande de location pour votre engin "${engin.nom}".
+      Informations du locataire :
+      - Nom: ${req.body.nom}
+      - Adresse e-mail: ${req.body.email}
+      - Adresse de livraison: ${req.body.adresseLivraison}`;
+
+    const loueurSubject = "Nouvelle demande de location";
+    const loueurEmailContent = `${loueurMessage}`;
+    console.log(loueur.email);
+    await emailService.sendEmail(loueur.email, loueurSubject, loueurEmailContent);
+
     res.send(locac);
   } catch (error) {
     res.status(500).send(error);
   }
 });
+
+
 
 
 //afficher les categories
