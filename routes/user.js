@@ -104,7 +104,7 @@ router.post('/user/location', async (req, res) => {
 
     const loueurSubject = "Nouvelle demande de location";
     const loueurEmailContent = `${loueurMessage}`;
-    console.log(loueur.email);
+    //console.log(loueur.email);
     await emailService.sendEmail(loueur.email, loueurSubject, loueurEmailContent);
 
     res.send(locac);

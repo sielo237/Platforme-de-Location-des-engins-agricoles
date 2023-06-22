@@ -4,6 +4,7 @@ const Engin=require('../models/engins');
 const Categorie=require('../models/categorie');
 const Location=require('../models/location');
 const authentification=require('../middlewares/authentification');
+const emailService=require('../services/email');
 const multer= require('multer');
 const path=require('path');
 const router= new express.Router();
@@ -74,7 +75,7 @@ router.post('/loueur/engin', authentification, upload.fields([
   { name: 'document', maxCount: 1 }
 ]), async (req, res) => {
   
-  console.log(req.files);
+  //console.log(req.files);
   const { categorie, nom, description, prix } = req.body;
   const loueurId = req.user._id;
   /*
@@ -160,7 +161,7 @@ router.get('/loueur/location',authentification, async (req, res) => {
    const loueurId = req.user._id;
     //console.log(loueurId) ;
     const demandesLocation = await Location.find({ loueur: loueurId }).populate('engin');
-    console.log(demandesLocation);
+    //console.log(demandesLocation);
     res.send(demandesLocation);
   } catch (error) {
     res.status(500).send(error);
@@ -168,29 +169,7 @@ router.get('/loueur/location',authentification, async (req, res) => {
 });
 
 // valider une location
-router.put('/loueur/ValideLocation/:locationId/',authentification, async (req, res) => {
-  try {
-    const locationId = req.params.locationId;
-    const location = await Location.findById(locationId).populate('engin');
-
-    if (!location) {
-      return res.status(404).send("cette locatin  n'existe pas");
-    }
-
-    const engin = location.engin;
-    location.statut = 'validée';
-    engin.disponibilite = false;
-    await location.save();
-    await engin.save();
-
-    res.send('La location a été validée');
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
-
-// Refuser une location
-router.put('/loueur/RefuseLocation/:locationId/', authentification, async (req, res) => {
+router.put('/loueur/ValideLocation/:locationId/', authentification, async (req, res) => {
   try {
     const locationId = req.params.locationId;
     const location = await Location.findById(locationId).populate('engin');
@@ -200,16 +179,77 @@ router.put('/loueur/RefuseLocation/:locationId/', authentification, async (req, 
     }
 
     const engin = location.engin;
-    location.statut = 'refusée';
-    engin.disponibilite = true;
+    location.statut = 'validée';
+    engin.disponibilite = false;
     await location.save();
     await engin.save();
 
-    res.send('La location a été refusée');
+    const locataireMessage = `Votre demande de location de l'engin "${engin.nom}" a été validée.\n\nInformations de la location :\n- Date de début : ${location.dateDebut}\n- Date de fin : ${location.dateFin}\n- Prix total : ${location.prixTotal}\n\nVous pouvez effectuer le paiement en utilisant le lien suivant : https:`;
+    const locataireSubject = "Demande de location validée";
+    const locataireEmailContent = `${locataireMessage}`;
+
+    await emailService.sendEmail(location.email, locataireSubject, locataireEmailContent);
+
+    res.send('La location a été validée');
   } catch (error) {
     res.status(500).send(error);
+    console.log(error);
   }
 });
+
+
+// Refuser une location
+router.put('/loueur/RefuseLocation/:locationId/', authentification, async (req, res) => {
+    try {
+    const locationId = req.params.locationId;
+    const location = await Location.findById(locationId).populate('engin');
+
+    if (!location) {
+      return res.status(404).send("Cette location n'existe pas");
+    }
+
+    const engin = location.engin;
+    location.statut = 'refusée';
+    engin.disponibilite = false;
+    await location.save();
+    await engin.save();
+
+    const locataireMessage = `Votre demande de location de l'engin "${engin.nom}" a été refusée.\n\nInformations de la location :\n- Date de début : ${location.dateDebut}\n- Date de fin : ${location.dateFin}\n- Prix total : ${location.prixTotal}\n\nVous pouvez effectuer une autre location sur notre platforme via : https:`;
+    const locataireSubject = "Demande de location refusée";
+    const locataireEmailContent = `${locataireMessage}`;
+
+    await emailService.sendEmail(location.email, locataireSubject, locataireEmailContent);
+
+    res.send('La location a été annulée');
+  } catch (error) {
+    res.status(500).send(error);
+    console.log(error);
+  }
+});
+
+
+// Afficher les locations refusées
+router.get('/loueur/locationsRefusees', authentification, async (req, res) => {
+  try {
+    const refuse = await Location.find({ statut: 'refusée' }).populate('engin');
+    res.send(refuse);
+  } catch (error) {
+    res.status(500).send(error);
+    console.log(error);
+  }
+});
+
+// Afficher les locations acceptées
+router.get('/loueur/locationsAcceptees', authentification, async (req, res) => {
+  try {
+    const accept = await Location.find({ statut: 'validée' }).populate('engin');
+    res.send(accept);
+  } catch (error) {
+    res.status(500).send(error);
+    console.log(error);
+  }
+});
+
 
 
 //afficher son profil

@@ -7,7 +7,7 @@ require('dotenv').config();
 const authentification = async (req, res, next) => {
   try {
     const authToken = req.header('Authorization').replace('Bearer ', '');
-    console.log(authToken);
+    //console.log(authToken);
     const decodedToken = jwt.verify(authToken, process.env.CLE);
     console.log(process.env.CLE);
 
