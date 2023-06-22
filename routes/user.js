@@ -21,13 +21,13 @@ router.get('/user/engins/valide', async (req, res) => {
       const enginsAValider = enginsValide.map((engin) => {
         
         const photosUrl = engin.photos.map((photo) => {
-          const photoUrl = `${req.protocol}://${req.get('host')}/public/photo/${photo}`;
+          const photoUrl = `${req.protocol}://${req.get('host')}/${photo}`;
           
           return photoUrl.split(path.sep).join('/');
           
         });
         
-        const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
+        const documentUrl = `${req.protocol}://${req.get('host')}/${engin.document}`;
     const documentUrlFormatted = documentUrl.split(path.sep).join('/');
     
             return {
