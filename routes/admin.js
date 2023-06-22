@@ -162,7 +162,7 @@ try {
 
   const enginsAValider = enginsEnAttente.map((engin) => {
     const photosUrl = engin.photos.map((photo) => {
-      const photoUrl = `${req.protocol}://${req.get('host')}/public/photo/${photo}`;
+      const photoUrl = `${req.protocol}://${req.get('host')}/photo/${photo}`;
       return photoUrl.split(path.sep).join('/');
     });
 
