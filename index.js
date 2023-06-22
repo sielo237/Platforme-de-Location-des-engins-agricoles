@@ -7,6 +7,7 @@ const userRoutes=require('./routes/user');
 const loueurRoutes=require('./routes/loueur');
 const adminRoutes=require('./routes/admin');
 require('dotenv').config();
+const path=require('path');
 
 
 
@@ -17,6 +18,9 @@ connection();
 app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
+//app.use('/photos', express.static('public/photos'));
+app.use('/images', express.static(path.join(__dirname, 'public/photos')));
+app.use('/document', express.static(path.join(__dirname,'public/document')));
 
 app.use(userRoutes);
 app.use(loueurRoutes);

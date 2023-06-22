@@ -90,6 +90,9 @@ router.get('/admin/location',authentification,async(req, res)=>{
   
   });
 
+
+  
+
  
 //afficher tous les loueurs
 router.get('/admin/loueurs',authentification,async(req, res)=>{
@@ -163,7 +166,7 @@ try {
       return photoUrl.split(path.sep).join('/');
     });
 
-    const documentUrl = `${req.protocol}://${req.get('host')}/public/document/${engin.document}`;
+    const documentUrl = `${req.protocol}://${req.get('host')}/document/${engin.document}`;
     const documentUrlFormatted = documentUrl.split(path.sep).join('/');
 
         return {
@@ -185,6 +188,40 @@ try {
 
  
 
+  // afficher tous les engins
+  router.get('/admin/engins/All',authentification, async (req, res) => {
+    
+
+    try {
+      const enginsEnAttente = await Engin.find()
+        .populate('loueur')
+        .populate('categorie');
+    
+      const enginsAValider = enginsEnAttente.map((engin) => {
+        const photosUrl = engin.photos.map((photo) => {
+          const photoUrl = `${req.protocol}://${req.get('host')}/photo/${photo}`;
+          return photoUrl.split(path.sep).join('/');
+        });
+    
+        const documentUrl = `${req.protocol}://${req.get('host')}/document/${engin.document}`;
+        const documentUrlFormatted = documentUrl.split(path.sep).join('/');
+    
+            return {
+              _id: engin._id,
+              nom: engin.nom,
+              description: engin.description,
+              loueur: engin.loueur,
+              categorie: engin.categorie.nom,
+              photos: photosUrl,
+              document: documentUrlFormatted,
+            };
+          });
+      
+          res.send(enginsAValider);
+        } catch (error) {
+          res.status(500).send(error);
+        }
+      });
 
   // afficher les publication mise a jour et dont on doit valider
   router.get('/admin/engins/maj',authentification, async (req, res) => {
