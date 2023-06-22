@@ -37,6 +37,7 @@ router.get('/user/engins/valide', async (req, res) => {
               description: engin.description,
               loueur: engin.loueur,
               categorie: engin.categorie.nom,
+              prix: engin.prix,
               photos: photosUrl,
               disponibilite:engin.disponibilite,
               document: documentUrlFormatted,
