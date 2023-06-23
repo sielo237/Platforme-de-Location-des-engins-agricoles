@@ -2,7 +2,7 @@ const express = require('express');
 const router = new express.Router();
 const Loueur = require('../models/loueur');
 const Location = require('../models/location');
-const Engin = require('../models/engin');
+const Engin = require('../models/engins');
 
 // Fonction pour normaliser une matrice de comparaisons
 function normalizeMatrix(matrix) {
@@ -77,11 +77,12 @@ async function getNombreCommandes(loueurId) {
 }
 
 // Endpoint pour le processus AHP
+// Endpoint pour le processus AHP
 router.post('/api/ahp', async (req, res) => {
   try {
-    const criteria = ['prix', 'note', 'commandes']; // Les critères que vous souhaitez prendre en compte
+    const criteria = ['prix', 'note', 'commandes'];
     const comparisons = req.body.comparisons;
-    const engins = await Engin.find({}).populate('loueur'); // Récupérez les données des engins depuis votre base de données et peuplez l'objet "loueur"
+    const engins = await Engin.find({}).populate('loueur');
 
     const weights = calculateWeights(comparisons);
 
@@ -90,13 +91,13 @@ router.post('/api/ahp', async (req, res) => {
 
     for (const engin of engins) {
       const result = {};
-
+      result._id = engin.loueur._id; 
       result.name = engin.loueur.nom;
       result.prix = engin.prix;
       result.note = engin.loueur.noteTotale;
 
       // Requête pour compter le nombre de commandes du loueur à partir de la collection "location"
-      const nombreCommandes = await getNombreCommandes({ loueur: engin.loueur._id });
+      const nombreCommandes = await getNombreCommandes(engin.loueur._id);
       result.commandes = nombreCommandes;
 
       // Utilisez le poids correspondant à l'index de l'engin
@@ -111,11 +112,6 @@ router.post('/api/ahp', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-
-
-
-
-
 
 module.exports = router;
 
