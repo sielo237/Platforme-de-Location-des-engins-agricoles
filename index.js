@@ -6,6 +6,7 @@ const connection=require('./db');
 const userRoutes=require('./routes/user');
 const loueurRoutes=require('./routes/loueur');
 const adminRoutes=require('./routes/admin');
+const ahpRoutes=require('./routes/ahp');
 require('dotenv').config();
 const path=require('path');
 
@@ -25,6 +26,7 @@ app.use('/document', express.static(path.join(__dirname,'public/document')));
 app.use(userRoutes);
 app.use(loueurRoutes);
 app.use(adminRoutes);
+app.use(ahpRoutes);
 
 
 // fonction pour générer une clé jwt

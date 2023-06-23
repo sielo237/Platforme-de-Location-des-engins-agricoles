@@ -3,6 +3,7 @@ const validator= require('validator');
 const bcrypt=require('bcryptjs');
 const jwt=require('jsonwebtoken');
 const moment=require('moment');
+const Location=require('./location');
 require('dotenv').config();
 
 //modèle du loueur qui seront enregistré  en Bd
@@ -152,7 +153,11 @@ loueurSchema.pre('save', async function(){
 
 });
 
-
+loueurSchema.methods.getNombreCommandes = async function() {
+    const nombreCommandes = await Location.countDocuments({ loueur: this._id });
+    return nombreCommandes;
+  };
+  
 
 const Loueur= new mongoose.model('Loueur',loueurSchema)
     
