@@ -175,6 +175,8 @@ try {
           description: engin.description,
           loueur: engin.loueur,
           prix: engin.prix,
+          disponibilite: engin.disponibilite,
+          statut: engin.statut,
           categorie: engin.categorie.nom,
           photos: photosUrl,
           document: documentUrlFormatted,
@@ -213,6 +215,8 @@ try {
               description: engin.description,
               loueur: engin.loueur,
               prix: engin.prix,
+              disponibilite: engin.disponibilite,
+              statut: engin.statut,
               categorie: engin.categorie.nom,
               photos: photosUrl,
               document: documentUrlFormatted,
@@ -259,6 +263,7 @@ try {
               nom: engin.nom,
               description: engin.description,
               loueur: engin.loueur,
+              prix: engin.prix,
               categorie: engin.categorie.nom,
               photos: photosUrl,
               document: documentUrlFormatted,
@@ -294,7 +299,7 @@ router.put('/admin/validation/:enginId', authentification, async (req, res) => {
       return res.status(404).send("Le loueur associé à l'engin n'existe pas");
     }
 
-    const message = (statut === 'validé') ? `Votre publication concernant l'engin "${engin.nom}" a été validée. Vous pouvez dès à présent le consulter sur la page web.` : `Votre publication concernant l'engin "${engin.nom}" a été refusée.`;
+    const message = (statut === 'validé') ? `Votre publication concernant l'engin "${engin.nom}" a été validée. Vous pouvez dès à présent le consulter sur notre platforme.` : `Votre publication concernant l'engin "${engin.nom}" a été refusée.`;
     const subject = (statut === 'validé') ? "Publication d'engin validée" : "Publication d'engin refusée";
     const emailContent = `${message}\n\nCommentaire : ${commentaire}`;
 
