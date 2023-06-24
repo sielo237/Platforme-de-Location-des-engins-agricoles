@@ -78,6 +78,7 @@ async function getNombreCommandes(loueurId) {
 
 
 // Endpoint pour le processus AHP
+// Endpoint pour le processus AHP
 router.post('/api/ahp', async (req, res) => {
   try {
     const criteria = ['prix', 'note', 'commandes'];
